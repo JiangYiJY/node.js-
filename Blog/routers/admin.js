@@ -1,7 +1,8 @@
 var express = require("express");
 var router = express.Router();
 var User = require("../models/User");
-var Category = require("../models/Category")
+var Category = require("../models/Category");
+var Content = require("../models/Content");
 
 //先去进行管理员身份的判断
 router.use(function(req, res, next){
@@ -86,7 +87,7 @@ router.get("/category", function(req, res){
 		page = Math.max(page, 1);
 		var skip = (page - 1) * limit;
 
-		Category.find().limit(limit).skip(skip).then(function(categories){
+		Category.find().limit(limit).skip(skip).sort({_id:-1}).then(function(categories){
 			// console.log(users); 可以看数据
 			res.render("admin/category_index", {
 				userInfo: req.userInfo,
@@ -202,7 +203,6 @@ router.post("/category/edit", function(req, res){
 			})
 			return Promise.reject();
 		}else{
-			
 			//当用户没有做任何修改提交的时候
 			if(name == category.name){
 				res.render("admin/success", {
@@ -241,6 +241,206 @@ router.post("/category/edit", function(req, res){
 		})
 	})
 })
+
+/*
+	分类删除
+*/
+router.get("/category/delete", function(req, res){
+	//获取删除的分类的id
+	var id = req.query.id || "";
+	if(id == ""){
+		res.render("admin/error", {
+			userInfo: req.userInfo,
+			message: "数据不存在，删除失败"
+		})
+	}else{
+		Category.remove({
+			_id: id
+		}).then(function(){
+			res.render("admin/success", {
+				userInfo: req.userInfo,
+				message: "删除成功",
+				url: "/admin/category"
+			})
+		})
+	}
+})
+
+/*
+	内容首页
+*/
+router.get("/content", function(req, res){
+	var page = req.query.page || 1;
+	var limit = 2;
+
+	/*
+		【注】在这里一定要注意，我们的页数不能低于1，也不能大于数据库中总页数
+
+	*/
+	Content.count().then(function(count){
+		// console.log(count);
+		//取值限制
+		var pages = Math.ceil(count / limit);
+		//取值不能超过pages
+		page = Math.min(page, pages);
+		//取值不能小于1
+		page = Math.max(page, 1);
+		var skip = (page - 1) * limit;
+
+		Content.find().limit(limit).skip(skip).sort({_id:-1}).populate(["category", "user"]).then(function(contents){
+			console.log(contents);  //可以看数据
+			res.render("admin/content_index", {
+				userInfo: req.userInfo,
+				contents: contents,
+				page: Number(page),  //前端页面需要知道当前是第几页。
+				pages: Number(pages)
+			})
+		})
+	})
+})
+/*
+	内容添加
+*/
+router.get("/content/add", function(req, res){
+	/*
+		读取分类的信息
+	*/
+	Category.find().sort({_id: -1}).then(function(categories){
+		res.render("admin/content_add", {
+			userInfo: req.userInfo,
+			categories: categories
+		})
+	})
+})
+
+/*
+	post 提交监听
+	内容保存
+*/
+router.post("/content/add", function(req, res){
+	// console.log(req.body);
+	// 做一个简单的验证
+	if(req.body.category == ""){
+		res.render("admin/error", {
+			userInfo: req.userInfo,
+			message: "内容分类不能为空"
+		})
+		return;
+	}
+
+	if(req.body.title == ""){
+		res.render("admin/error", {
+			userInfo: req.userInfo,
+			message: "标题不能为空"
+		})
+		return;
+	}
+
+	//保存到数据库
+	new Content({
+		category: req.body.category,
+		title: req.body.title,
+		user: req.userInfo._id.toString(),
+		description: req.body.description,
+		content: req.body.content
+	}).save().then(function(rs){
+		res.render("admin/success", {
+			userInfo: req.userInfo,
+			message: "内容保存成功",
+			url: "/admin/content"
+		})
+		return ;
+	})
+})
+
+/*
+	修改内容的路由
+*/
+router.get("/content/edit", function(req, res){
+	var id = req.query.id || "";
+
+	var categories = [];
+
+	Category.find().sort({_id: -1}).then(function(rs){
+		categories = rs;
+		return Content.findOne({
+			_id: id
+		}).populate("category");
+	}).then(function(content){
+		//如果读取的信息不逊在
+		if(!content){
+			res.render("admin/error", {
+				userInfo: req.userInfo,
+				message: "指定内容不存在"
+			});
+			return Promise.reject();
+		}else{
+			//加载内容的修改页面
+			res.render("admin/content_edit", {
+				userInfo: req.userInfo,
+				content: content,
+				categories: categories
+			})
+		}
+	})
+})
+
+/*
+	删除内容的路由
+*/
+router.get("/content/delete", function(req, res){
+	var id = req.query.id || "";
+	Content.remove({
+		_id: id
+	}).then(function(){
+		res.render("admin/success", {
+			userInfo: req.userInfo,
+			message: "删除成功",
+			url: "/admin/content"
+		})
+	})
+	
+})
+/*
+	保存修改内容
+*/
+router.post("/content/edit", function(req, res){
+	var id = req.query.id || "";
+
+	//做一个简单的验证
+	if(req.body.category == ""){
+		res.render("admin/error", {
+			userInfo: userInfo,
+			message: "内容分类不能为空"
+		})
+		return;
+	}
+	if(req.body.title == ""){
+		res.render("admin/error", {
+			userInfo: userInfo,
+			message: "内容标题不能为空"
+		})
+		return;
+	}
+
+	//修改数据
+	Content.update({
+		_id: id
+	}, {
+		category: req.body.category,
+		title: req.body.title,
+		description: req.body.description,
+		cotent: req.body.content
+	}).then(function(){
+		res.render("admin/success", {
+			userInfo: req.userInfo,
+			message: "内容修改成功",
+			url: "/admin/content"
+		})
+	})
+})
+
+
 
 module.exports = router;
 
