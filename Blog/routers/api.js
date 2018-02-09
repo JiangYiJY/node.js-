@@ -2,6 +2,7 @@ var express = require("express");
 var router = express.Router();
 //引入数据模型
 var User = require("../models/User");
+var Content = require("../models/Content");
 
 //处理注册的信息
 //定义一个统一的返回格式
@@ -142,6 +143,34 @@ router.get("/user/logout", function(req, res){
 	//将cookie清除
 	req.cookies.set("userInfo", null);
 	res.json(responseData);
+})
+
+/*
+	评论的提交
+*/
+router.post("/comment/post", function(req, res){
+	//内容id
+	var contentId = req.body.contentid || "";
+
+	var postData = {
+		username: req.userInfo.username,
+		postTime: new Date(),
+		content: req.body.content //评论内容
+	}
+
+	//查询当前这篇内容信息
+	Content.findOne({
+		_id: contentId
+	}).then(function(content){
+		//插入本次提交的数据，并保存
+		content.comments.push(postData);
+		return content.save();
+	}).then(function(newContent){
+		console.log(newContent);
+		responseData.message = "评论成功";
+		responseData.data = newContent;
+		res.json(responseData);
+	})
 })
 
 

@@ -24,7 +24,7 @@
 	  			<td>{{content.category.name}}</td>
 	  			<td>{{content.title}}</td>
 	  			<td>{{content.user.username}}</td>
-	  			<td>{{content.addTime|date("Y/m/d")}}</td>
+	  			<td>{{content.addTime|date("Y/m/d H:i:s", -8*60)}}</td>
 	  			<td>{{content.views}}</td>
 	  			<td>
 	  				<a href="/admin/content/edit?id={{content._id.toString()}}">修改</a>

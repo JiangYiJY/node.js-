@@ -1,0 +1,98 @@
+
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>博客</title>
+<link href="/public/css/main.css" rel="stylesheet" type="text/css">
+<link href="/public/fontAwesome/css/font-awesome.min.css" rel="stylesheet" type="text/css">
+<script src = "/public/js/jquery-1.12.4.min.js"></script>
+<script src = "/public/js/index.js"></script>
+</head>
+
+<body>
+	<header>
+		<div class="backimg"><img src="/public/images/IMG_0293.JPG"></div>
+		<div class="logo"><span></span><img src="/public/images/00002637.png"></div>
+	</header>
+
+	<nav>
+		<div class="menu">
+
+            {% if category == "" %}
+	    	<a href="/" class="focus">首页</a>
+            {% else %}
+            <a href="/">首页</a>
+            {% endif %}
+                {% for cate in categories %}
+                    {% if cate._id.toString() == category %}
+                         <a class="focus" href="/?categoryid={{cate._id.toString()}}">{{cate.name}}</a>
+                    {% else %}
+                         <a href="/?categoryid={{cate._id.toString()}}">{{cate.name}}</a>
+                    {% endif %}
+                {% endfor %}
+	    </div>
+	</nav>
+
+	
+
+    <main class="clear">
+        <div class="mainLeft">
+            {% block main%}
+            {% endblock %}
+
+        </div>
+
+        <div class="mainRight">
+            
+            {% if userInfo._id %}
+            <div class="rightBox" id = "userInfo">
+                <div class="title"><span>用户信息</span></div>
+                <p><span class="colDark username">{{userInfo._id}}</span></p>
+                
+               {% if userInfo.isAdmin %}
+                 <p>
+                    <span class="colDanger info">你好，管理员！</span>
+                    <!-- 增加一个链接，可以登录到后台的系统 -->
+                    <a href="/admin">进入管理</a>
+                </p>
+               {% else %}
+                <p><span class="colDanger info">你好欢迎光临我的博客😁！</span></p>
+               {% endif %}
+                
+                <p><span class="colDark logout"><a href="javascript:;" id="logoutBtn">退出</a></span></p>
+            </div>
+            {% else %}
+            <div class="rightBox" id="loginBox" >
+                <div class="title"><span>登录</span></div>
+                <div class="line"><span class="colDark">用户名：</span><input type="text" name = "username"/><em></em></div>
+                <div class="line"><span class="colDark">密码：</span><input type="password" name = "password"/><em></em></div>
+                <div class="line"><span class="colDark"></span><button>登 录</button></div>
+                <p class="textRight">还没注册？<a href="javascript:;" class="colMint">马上注册</a>　</p>
+                <p class="colWarning textCenter"></p>
+            </div>
+
+            <div class="rightBox" id="registerBox" style = "display: none">
+                <div class="title"><span>注册</span></div>
+                <div class="line"><span class="colDark">用户名：</span><input name = "username" type="text" /></div>
+                <div class="line"><span class="colDark">密码：</span><input name = "password" type="password" /></div>
+                <div class="line"><span class="colDark">确认：</span><input name = "repassword" type="password" /></div>
+                <div class="line"><span class="colDark"></span><button>注 册</button></div>
+                <p class="textRight">已有账号？<a href="javascript:;" class="colMint">马上登录</a>　</p>
+                <p class="colWarning textCenter"></p>
+            </div>
+            {% endif %}
+            
+            <div class="rightBox">
+                <div class="title"><span>社区</span></div>
+                    <p><a href="http://www.qfedu.com" target="_blank" class="colDanger">千锋课堂</a></p>
+                    <p><a href="http://bbs.qfedu.com" target="_blank" class="colDanger">千锋茶馆</a></p>
+                </div>
+            </div>
+
+
+    </main>
+
+	<div class="copyright textCenter">Copyright © qfedu.com 版权所有 | 京ICP备08102442号</div>
+</body>
+</html>
